@@ -196,9 +196,11 @@ try {
         $ConvertSrcPathRes = $LASTEXITCODE
         if ($ConvertSrcPathRes -ne 0) { throw (New-Object System.IO.DirectoryNotFoundException -ArgumentList "Error converting source path '${SrcFullPath}' to a WSL path: `wslpath` returned '${ConvertSrcPathRes}' ; '${BackupLabel}' backup aborted.") }
 
-        $IncludeExcludeListFile = & wsl wslpath -u "${IncludeExcludeListFile}"
-        $ConvertIncludeListFileRes = $LASTEXITCODE
-        if ($ConvertIncludeListFileRes -ne 0) { throw (New-Object System.IO.FileNotFoundException -ArgumentList "Error converting include/exclude file path '${IncludeExcludeListFile}' to a WSL path: `wslpath` returned '${ConvertIncludeListFileRes}' ; '${BackupLabel}' backup aborted.") }
+        if ($IncludeExcludeListFile) {
+            $IncludeExcludeListFile = & wsl wslpath -u "${IncludeExcludeListFile}"
+            $ConvertIncludeListFileRes = $LASTEXITCODE
+            if ($ConvertIncludeListFileRes -ne 0) { throw (New-Object System.IO.FileNotFoundException -ArgumentList "Error converting include/exclude file path '${IncludeExcludeListFile}' to a WSL path: `wslpath` returned '${ConvertIncludeListFileRes}' ; '${BackupLabel}' backup aborted.") }
+        }
     } else {
         throw (New-Object System.ComponentModel.InvalidEnumArgumentException -ArgumentList "Unknown environment for rdiff-backup executable: '$($RdiffBackupExe.Environment)' ; cannot proceed further.")
     }
