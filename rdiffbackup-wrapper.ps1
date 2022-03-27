@@ -77,6 +77,7 @@ param (
     [string]$RdiffBackupVer = 'v205',
 
     # The version code of the `rdiff-backup` executable to use to remove old backup increments.
+    # It must be, in the `RdiffBackup` module, the key to an `RdiffBackupExe` value with the same `Environment` property as the value the `RdiffBackupVer` parameter is the key to.
     # Leave empty to use the same executable as for backups.
     [ValidateNotNullOrEmpty()]
     [string]$RdiffBackupRemoveVer = $RdiffBackupVer
@@ -138,10 +139,14 @@ try {
         throw (New-Object System.ArgumentException -ArgumentList "Invalid rdiff-backup executable version for backup removal ('$RdiffBackupRemoveVer') ; should be one of: $($RdiffBackupExes.Keys | ForEach-Object {"'"+$_+"'"})")
     }
 
-    ### Main
-
     $RdiffBackupExe = $RdiffBackupExes[$RdiffBackupVer]
     $RdiffBackupRemoveExe = $RdiffBackupExes[$RdiffBackupRemoveVer]
+
+    if (${RdiffBackupExe}.Environment -ne ${RdiffBackupRemoveExe}.Environment) {
+        throw (New-Object System.ArgumentException -ArgumentList "Incompatible environments: rdiff-backup executable '${RdiffBackupVer}' runs in '$(${RdiffBackupExe}.Environment)' while rdiff-backup remove executable '${RdiffBackupRemoveVer}' runs in '$(${RdiffBackupRemoveExe}.Environment)' ; you should select executables which run under the same environment")
+    }
+
+    ### Main
 
     #-- Mount destination disk
 
