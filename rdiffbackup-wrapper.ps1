@@ -1,47 +1,83 @@
-﻿using module "Modules\RdiffBackup"
+﻿<#
+.SYNOPSIS
+Script which wraps calls to `rdiff-backup` with the mounting/dismounting (or connecting/disconnecting) of the backup destination.
+
+.DESCRIPTION
+This script first connects the system to a given backup destination through a "mount" procedure (e.g. the mounting of a local disk or the connecting to a remote one),
+then, if successful, uses `rdiff-backup` to delete backup increments older than a given period and to perform a new backup,
+and finally "dismounts" (e.g. unmounts or disconnects) the backup destination.
+
+.EXAMPLE
+PS> $SystemBackupParams = @{
+    BackupLabel = 'system'
+    DestDriveId = 'f5ab4be2e6a840d4879dcd23c8be83eb'
+    DestDriveLabel = 'sys-backup-f5ab4'
+    DestPath = '/Backup'
+    SrcFullPath = 'C:/'
+    IncludeExcludeListFile = 'C:/.sys-backup-filelist'
+    RdiffBackupVer = 'v210a1'
+    RdiffBackupRemoveVer = 'v205'
+}
+PS> X:\path\to\rdiffbackup-wrapper.ps1 @SystemBackupParams
+
+.NOTES
+`rdiff-backup` behaves a bit less straightforwardly under Windows, in particular with regards to path separators.
+See the `rdiff-backup` Windows documentation for details: <https://github.com/rdiff-backup/rdiff-backup/blob/master/docs/Windows-README.adoc#additional-issues>.
+#>
+
+
+using module "Modules\RdiffBackup"
 
 param (
-    [Parameter(Mandatory,
-    HelpMessage="General label (name) to give to this backup")]
+    # Arbitrary label (i.e. name) to give to this backup.
+    # Particularly useful to identify different instances of this script for example in error messages.
+    [Parameter(Mandatory)]
     [ValidateNotNullOrEmpty()]
     [string]$BackupLabel,
 
-    [Parameter(Mandatory,
-    HelpMessage="Absolute path to the source directory to backup")]
+    # Absolute path of the source directory to backup.
+    [Parameter(Mandatory)]
     [ValidateNotNullOrEmpty()]
     [string]$SrcFullPath,
 
-    [Parameter(Mandatory,
-    HelpMessage="The ID of the backup destination drive")]
+    # The ID of the backup destination drive.
+    # It is used to mount the drive before backup.
+    [Parameter(Mandatory)]
     [ValidateNotNullOrEmpty()]
     [string]$DestDriveId,
 
-    [Parameter(Mandatory,
-    HelpMessage="An arbitrary (but unique) label to give the backup destination drive once opened and mounted ; shouldn't be longer than 32 or 11 characters for a drive hosting respectively an NTFS file system or an (ex)FAT file system")]
+    # An arbitrary label to assign to the backup destination drive once opened and mounted, in order to uniquely identify it.
+    # It shouldn't be longer than 32 or 11 characters for a drive hosting respectively an NTFS file system or an (ex)FAT file system.
+    [Parameter(Mandatory)]
     [ValidateLength(1,32)]
     [string]$DestDriveLabel,
 
-    [Parameter(Mandatory,
-    HelpMessage="The path to the backup destination directory, relative to the destination drive root (e.g. '/' or '/path/to/backup_dir')")]
+    # The path to the backup destination directory, relative to the destination drive root (e.g. '/' or '/path/to/backup_dir').
+    [Parameter(Mandatory)]
     [ValidateNotNullOrEmpty()]
     [string]$DestPath,
 
-    [Parameter(HelpMessage="If present, forces the use of `-` characters instead of `:` in backup data filenames ; if absent, this will be automatically decided based on the environment")]
+    # Forces the use of `-` characters instead of `:` in backup data filenames.
+    # By default, this is automatically decided by `rdiff-backup` based on the environment it runs in.
     [switch]$UseCompatibleTimestamps,
 
-    [Parameter(HelpMessage="Absolute path of a file containing a list of include/exclude directives for the backup command")]
+    # Absolute path of a file containing a list of include/exclude directives for the backup command.
     [ValidateNotNullOrEmpty()]
     [string]$IncludeExcludeListFile,
 
-    [Parameter(HelpMessage="All previous backups older than this value will be deleted (e.g. '1M' will delete all backups performed more than a month ago) ; see <https://duplicity.readthedocs.io/en/latest/_modules/duplicity/dup_time.html#genstrtotime> for acceptable time formats")]
+    # All backup increments present in the backup destination and older than this value will be deleted.
+    # For example, '1M' will delete all backups performed more than a month ago.
+    # Refer to <https://duplicity.readthedocs.io/en/latest/_modules/duplicity/dup_time.html#genstrtotime> for acceptable time formats.
     [ValidateNotNullOrEmpty()]
     [string]$RemoveOlderThan = '3M',
 
-    [Parameter(HelpMessage="The version code of the `rdiff-backup` executable to execute")]
+    # The version code of the `rdiff-backup` executable to execute to perform backups.
+    # It must be one of the keys defined in the `RdiffBackup` module.
     [ValidateNotNullOrEmpty()]
     [string]$RdiffBackupVer = 'v205',
 
-    [Parameter(HelpMessage="The version code of the `rdiff-backup` executable to use to remove old backups ; leave empty to use the same executable as for backups, or specify a given version when necessary")]
+    # The version code of the `rdiff-backup` executable to use to remove old backup increments.
+    # Leave empty to use the same executable as for backups.
     [ValidateNotNullOrEmpty()]
     [string]$RdiffBackupRemoveVer = $RdiffBackupVer
 )
