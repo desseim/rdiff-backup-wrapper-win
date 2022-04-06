@@ -1,0 +1,153 @@
+:script-file-name: rdiffbackup-wrapper.ps1
+:script-file-example-path: X:\path\to\
+
+:url_rdiff-backup-wrapper_repo: https://github.com/desseim/rdiff-backup-wrapper/
+:url_rdiff-backup: https://rdiff-backup.net/
+:url_rdiff-backup_old-to-new-cli: https://github.com/rdiff-backup/rdiff-backup/blob/v2.1.0a1/docs/migration.md#migration-from-old-to-new-cli
+:url_rdiff-backup_sidebyside-install: https://github.com/rdiff-backup/rdiff-backup/blob/v2.1.0a1/docs/Windows-README.md#installation
+:url_ms_script-module: https://docs.microsoft.com/en-us/powershell/scripting/learn/ps101/10-script-modules#script-modules
+:url_ms_ps-exec-policy: https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_execution_policies
+:url_ms_wsl: https://docs.microsoft.com/en-us/windows/wsl/
+:url_ms_scheduled-jobs: https://docs.microsoft.com/en-us/powershell/module/psscheduledjob/about/about_scheduled_jobs
+
+:module_rdiffbackup-name: RdiffBackup
+:module_rdiffbackup-script-name: RdiffBackup.psm1
+:module_drivemount-name: DriveMount
+:module_drivemount-script-name: DriveMount.psm1
+:module_toastnotification-name: ToastNotification
+
+:local_license: LICENSE
+:local_wrapper-script: {script-file-name}
+:local_modules-dir: Modules
+:local_rdiffbackup-module-dir: {local_modules-dir}/{module_rdiffbackup-name}
+:local_rdiffbackup-module-script: {local_rdiffbackup-module-dir}/{module_rdiffbackup-script-name}
+:local_toastnotification-module-dir: {local_modules-dir}/{module_toastnotification-name}
+:local_drivemount-module-dir: {local_modules-dir}/{module_drivemount-name}
+:local_drivemount-module-script: {local_drivemount-module-dir}/{module_drivemount-script-name} 
+
+
+This is a simple PowerShell script which wraps calls to `rdiff-backup` with the mounting/dismounting (or connecting/disconnecting) of the backup destination.
+
+This is the same utility as {url_rdiff-backup-wrapper_repo}[`rdiff-backup-wrapper`], but adapted to a Windows environment.
+
+== Use case
+Just like {url_rdiff-backup-wrapper_repo}[`rdiff-backup-wrapper`]: I find it useful to keep the system's backup destination offline (at least from the point of view of the backup source environment, i.e. unmounted) most of the time, significantly reducing the risk of unauthorized access to or accidental corruption of the backups. This makes particular sense in the case the backup destination is local to the backup source.
+
+The script will first connect the system to the backup destination through a "mount" procedure (e.g. the mounting of a local disk or the connecting to a remote one), then, if successful, use {url_rdiff-backup}[`rdiff-backup`] to delete old backup increments and perform a new backup, and finally "dismount" (e.g. unmount or disconnect) the backup destination.
+
+It also offers a couple of *reusable PowerShell modules* which could also be useful on their own:
+
+link:{local_rdiffbackup-module-dir}[`{module_rdiffbackup-name}` module]::
+A layer of abstraction to help calling Windows or WSL {url_rdiff-backup}[`rdiff-backup`] executables from PowerShell.
+It notably allows dynamically switching between several executables (e.g. installed {url_rdiff-backup_sidebyside-install}[side-by-side]) selecting them at call time through a parameter.
+It also automatically sets necessary (e.g. for bug workaround) or sensible options according to the version of the called `rdiff-backup` executable, the environment it is run in (e.g. WSL), or the invoked `rdiff-backup` action.
+link:{local_toastnotification-module-dir}[`{module_toastnotification-name}` module]::
+A PowerShell module to easily show toast notifications to a user's Windows desktop.
+It supports sending a simple toast notification with a title and a message, and automatically displaying the toast on the desktop of the user currently logged into the local machine.
+
+== Development status / quality
+This is a simple script intended mainly for a personal, rather constrained use case.
+It only supports a subset of `rdiff-backup` functionalities.
+As such it comes on an "as-is" basis and without any guarantee whatsoever (see link:{local_license}#L258[license] for details).
+
+It nevertheless features minimal modularity, error-handling and documentation, and should be rather simple to adapt for similar use cases.
+
+== Usage
+....
+SYNTAX
+    rdiffbackup-wrapper.ps1 [-BackupLabel] <String> [-SrcFullPath] <String>
+    [-DestDriveId] <String> [-DestDriveLabel] <String> [-DestPath] <String> [-UseCompatibleTimestamps]
+    [[-IncludeExcludeListFile] <String>] [[-RemoveOlderThan] <String>] [[-RdiffBackupVer] <String>]
+    [[-RdiffBackupRemoveVer] <String>] [<CommonParameters>]
+....
+
+For example:
+
+[subs="+attributes"]
+....
+PS > $BackupParams = @{
+         BackupLabel = 'System'
+         DestDriveId = 'F1391FF7683E4147BB73340B7CA25810'
+         DestDriveLabel = '_Sys_backup'
+         DestPath = '/Backup'
+         SrcFullPath = 'C:/'
+         IncludeExcludeListFile = 'X:/etc/rdiff-backup/include_filelist'
+         RdiffBackupVer = 'v210a1'
+         RdiffBackupRemoveVer = 'v205'
+     }
+PS > {script-file-example-path}{script-file-name} @BackupParams
+....
+
+You can get a full description of the script including parameters using `Get-Help` in PowerShell:
+
+[subs="+attributes"]
+....
+PS > Get-Help {script-file-example-path}{script-file-name} -Detailed  # <1>
+....
+<1> Make sure script running is enabled by the current <<ps-execution-policy,PowerShell execution policy>> lest `Get-Help` fail to retrieve the script's local help and start searching for unexisting online help instead.
+
+=== Options
+==== `rdiff-backup` executable
+Once <<install-rdiff-backup-exe,defined in `+$RdiffBackupExes+`>>, each executable can be specified by passing its hash table key as the script's `+-RdiffBackupVer+` (for the executable to use to perform the backup) or `+-RdiffBackupRemoveVer+` (for the executable to use to remove old backup increments) parameter ; both parameters are independent and it is possible to specify a different `+$RdiffBackupExes+` key to each of them in a same script call.
+
+== Installation
+Simply put link:{local_wrapper-script}[the script] together with link:{local_modules-dir}[the `Modules` directory] in a given directory of your choice (e.g. `+C:\Users\username\bin\+`).
+
+[#ps-execution-policy]
+Make sure the execution policy of the PowerShell session you run the script from allows for script running ; see {url_ms_ps-exec-policy}[Microsoft documentation] on how to do so.
+
+=== `rdiff-backup` executables
+You can install several `rdiff-backup` executables (possibly {url_rdiff-backup_sidebyside-install}[side-by-side]) and select at script-call time which one the wrapper script will call internally.
+[[install-rdiff-backup-exe]]Each executable must be defined in the `+$RdiffBackupExes+` hash table declared in link:{local_rdiffbackup-module-script}[`{module_rdiffbackup-script-name}`]. You can refer to the few predefined entries there for syntax. The `+RdiffBackupExe::Api+` member variable refers to whether the `rdiff-backup` executable should be called with the link:{url_rdiff-backup_old-to-new-cli}[old or new CLI], and the `+RdiffBackupExe::Environment+` should be one of `+RdiffBackupExeEnv::Win+` for "native" Windows executables or `+RdiffBackupExeEnv::WSL+` for ones installed in the {url_ms_wsl}[Windows Subsystem for Linux].
+Executables so defined can then be <<rdiff-backup-executable,selected at call time>>.
+
+TIP: Each parameter has a default value which can be modified by editing link:{local_wrapper-script}[`{script-file-name}`].
+
+=== Modules
+Alternatively, modules can be stored anywhere ; you just need to change the value of the `+$MODULES_ABS_PATH+` constant in link:{local_wrapper-script}[] to the new location of the link:{local_modules-dir}[`Modules` directory]. Each module's path can also be set individually through their respective `+$MODULE_***_PATH+` variable value.
+
+It's also possible to store some or all modules in a location specified in `+$env:PSModulePath+` ; in this case, their respective `Import-Module` call in link:{local_wrapper-script}[] can be commented out and the modules will be automatically loaded (see {url_ms_script-module}[Microsoft documentation on script modules] for more on this).
+
+=== Mount/dismount operation implementation
+
+The script ships with a mock implementation (which does nothing) of the backup destination mount/dismount operation.
+This is fine for backups toward always-mounted destinations, but if you want to automatically mount/dismount the destination respectively before/after the backup operations, you'll have to implement the `Mount-Drive` and `Dismount-Drive` functions in the link:{local_drivemount-module-script}[`{module_drivemount-name}` module] to do so according to your use case.
+Refer to the source comments and the given mock implementation for documentation.
+
+=== Scheduled execution
+NOTE: The script assumes such a scheduled usage in its default error messages.
+
+It often makes sense to have Windows automatically run the script at regular intervals, for automated backups.
+This can be achieved for example with link:{url_ms_scheduled-jobs}[scheduled jobs]:
+
+.Register a new scheduled job to run the script with a given set of parameters
+[subs="+attributes"]
+----
+PS > $RegularBackupParams = @{
+         BackupLabel = 'System'
+         ...  # <1>
+     }
+PS > Register-ScheduledJob -Name 'System backup' -ScriptBlock { param($parameters); {script-file-example-path}{script-file-name} @parameters; } -ArgumentList $RegularBackupParams
+----
+<1> Rest of the named arguments to pass to the script
+
+Scheduled jobs are registered as regular scheduled tasks, the action of which is to start a PowerShell instance to run the defined job.
+As such, scheduled job properties, like its running time or interval, can be set through the command line using the `Get-ScheduledJob` and `Set-ScheduledJob` cmdlets, or with the Windows Task Scheduler GUI: scheduled jobs are registered under the `Microsoft\Windows\PowerShell\ScheduledJobs` folder in the `Task Scheduler Library`.
+Besides setting the appropriate user to run the task, or the run conditions, it might also be necessary to edit the task action to pass a <<ps-execution-policy,proper `-ExecutionPolicy`>> argument to `powershell.exe` lest the script not get executed when the task run PowerShell.
+
+The output of scheduled jobs can later be retrieved using the `Receive-Job` cmdlet. The list of previously run job intances can be retrieved with `Get-Job`. For example:
+
+.Retrieve a scheduled job's output
+....
+PS > Get-Job
+Id     Name            PSJobTypeName   State         HasMoreData     Location             Command
+--     ----            -------------   -----         -----------     --------             -------
+...
+16     System backup   PSScheduledJob  Failed        True            localhost            param($parameters); C...
+PS > Receive-Job -Keep -Id 16  # <1>
+...  # job output
+....
+<1> `-Keep` prevents the job from being discarded and allows for potentially retrieving it again in the future with the same command.
+
+The job's definition and run outputs are stored in XML format at `X:\Users\<task-running-user>\AppData\Local\Microsoft\Windows\PowerShell\ScheduledJobs\<scheduled-job-name>`.
+
