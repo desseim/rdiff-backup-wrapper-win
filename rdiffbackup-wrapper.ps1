@@ -232,6 +232,8 @@ try {
         $BackupFailureMessage = "Backup '${BackupLabel}' failed: rdiff-backup returned '${BackupCmdRes}'"
 
         # We verify the state of the backup repository after the backup failure:
+        # NOTE: the "verify" action is not exactly what we want, but the better suited "check destination dir" implies an automatic regression which also isn't what we want
+        #       for now this will do as it still validates the checksums of the backed up files ; it can be updated if the enhancement in <https://github.com/rdiff-backup/rdiff-backup/issues/617> gets implemented
         $VerifyCmdRes = Invoke-RdiffBackup -Verify -Destination "${DestFullPath}" -Exe ${RdiffBackupExe}
         if ($VerifyCmdRes -ne $RDIFFBACKUP_EXITCODE_SUCCESS) {
             throw "${BackupFailureMessage} ; backup repository '${DestFullPath}' is left in inconsistent state."
