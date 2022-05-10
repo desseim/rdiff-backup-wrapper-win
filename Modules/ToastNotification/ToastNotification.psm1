@@ -122,6 +122,27 @@ function Show-NotificationTask {
     }
 }
 
+<#
+.Description
+Displays a toast notification to a given user.
+
+.PARAM Title
+The title text of the notification.
+
+.PARAM Message
+The main text of the notification.
+
+.PARAM AppId
+The ID of the application the notification will be bound to, as defined by `Windows.UI.Notifications.ToastNotificationManager.CreateToastNotifier(String)`.
+Defaults to the ID of PowerShell if omitted.
+
+.PARAM UserName
+The name of the user whose desktop to show the notification on.
+
+.NOTES
+A PowerShell windows may flash briefly when the toast notification gets displayed.
+This is a known Windows limitation (see <https://github.com/PowerShell/PowerShell/issues/3028> for details).
+#>
 function Show-Notification {
     param (
         [Parameter(Mandatory)]
@@ -147,8 +168,22 @@ function Show-Notification {
 
 <#
 .Description
-Displays a notification to the user currently logged in, if any.
+Displays a toast notification to the user currently logged in, if any.
 If none, a warning with the notification title and message is logged.
+
+.PARAM Title
+The title text of the notification.
+
+.PARAM Message
+The main text of the notification.
+
+.PARAM AppId
+The ID of the application the notification will be bound to, as defined by `Windows.UI.Notifications.ToastNotificationManager.CreateToastNotifier(String)`.
+Defaults to the ID of PowerShell if omitted.
+
+.NOTES
+A PowerShell windows may flash briefly when the toast notification gets displayed.
+This is a known Windows limitation (see <https://github.com/PowerShell/PowerShell/issues/3028> for details).
 #>
 function Show-NotificationToLoggedInUser {
     param (
