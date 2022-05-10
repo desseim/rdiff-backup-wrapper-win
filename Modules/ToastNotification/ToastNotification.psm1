@@ -8,7 +8,7 @@ Set-Variable -Option Constant -Scope Script -Name POWERSHELL_APP_ID -Value "{1AC
 .Description
 Returns the name of the user currently logged in, or $null if no user is currently logged in.
 #>
-function Get-LoggedinUser {
+function Get-LoggedinUserName {
     return (Get-CimInstance -ClassName Win32_ComputerSystem).UserName
 }
 
@@ -63,7 +63,7 @@ function New-NotificationTask {
 
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
-        [String]$User
+        [String]$UserName
     )
 
     Set-Variable -Option Constant -Name CMD_ARG_QUOTE -Value '"'
@@ -79,7 +79,7 @@ Import-Module ${PSCommandPath} ; Show-NotificationToast -Title ${CMD_ARG_QUOTE}$
     $NotificationTaskExeCmdEncoded = [Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($NotificationTaskExeCmd))
     $NotificationTaskAction = New-ScheduledTaskAction -Execute $NotificationTaskExe -Argument "${NotificationTaskExeArg} -EncodedCommand ${NotificationTaskExeCmdEncoded}"
 
-    $NotificationTaskPrincipal = New-ScheduledTaskPrincipal -UserId $User
+    $NotificationTaskPrincipal = New-ScheduledTaskPrincipal -UserId $UserName
 
     $NotificationTask = New-ScheduledTask -Action $NotificationTaskAction -Principal $NotificationTaskPrincipal -Description $NOTIFICATION_TASK_DESCRIPTION
 
@@ -135,10 +135,10 @@ function Show-Notification {
         [String]$AppId = $POWERSHELL_APP_ID,
         
         [ValidateNotNullOrEmpty()]
-        [String]$User
+        [String]$UserName
     )
 
-    $NotificationTask = New-NotificationTask -Title $Title -Message $Message -AppId $AppId -User $User
+    $NotificationTask = New-NotificationTask -Title $Title -Message $Message -AppId $AppId -UserName $UserName
 
     $NotificationTaskName = New-NotificationTaskName -Prefix $NOTIFICATION_TASK_NAME_PREFIX
 
@@ -163,9 +163,9 @@ function Show-NotificationToLoggedInUser {
         [String]$AppId = $POWERSHELL_APP_ID
     )
 
-    $LoggedInUser = Get-LoggedinUser
-    if ($LoggedInUser) {
-        Show-Notification -Title $Title -Message $Message -AppId $AppId -User $LoggedInUser
+    $LoggedInUserName = Get-LoggedinUserName
+    if ($LoggedInUserName) {
+        Show-Notification -Title $Title -Message $Message -AppId $AppId -UserName $LoggedInUserName
     } else {
         Write-Warning "The following user notification was not shown since there is currently no logged-in user ; <Title>: ""$Title"" <Message>: ""$Message"""
     }
