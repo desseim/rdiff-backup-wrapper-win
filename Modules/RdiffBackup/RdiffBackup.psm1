@@ -178,7 +178,7 @@ function Invoke-RdiffBackup {
 }
 
 <#
-.Description
+.DESCRIPTION
 Test whether a given path is that of an existing `rdiff-backup` backup destination.
 #>
 function Test-RdiffBackupDirectory {

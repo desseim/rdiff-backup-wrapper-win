@@ -5,7 +5,7 @@ Set-Variable -Option Constant -Scope Script -Name POWERSHELL_APP_ID -Value "{1AC
 
 
 <#
-.Description
+.DESCRIPTION
 Returns the name of the user currently logged in, or $null if no user is currently logged in.
 #>
 function Get-LoggedinUserName {
@@ -16,7 +16,7 @@ function Get-LoggedinUserName {
 .SYNOPSIS
 Doubles all instances of a character in a string.
 
-.Description
+.DESCRIPTION
 Particularly useful to escape quoting characters the string will be enclosed by, by doubling them.
 This might be necessary e.g. when the string will be passed down to another shell to be later interpreted.
 
@@ -123,7 +123,7 @@ function Show-NotificationTask {
 }
 
 <#
-.Description
+.DESCRIPTION
 Displays a toast notification to a given user.
 
 .PARAM Title
@@ -167,7 +167,7 @@ function Show-Notification {
 }
 
 <#
-.Description
+.DESCRIPTION
 Displays a toast notification to the user currently logged in, if any.
 If none, a warning with the notification title and message is logged.
 
