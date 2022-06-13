@@ -190,7 +190,7 @@ try {
         # Mount drive in WSL
         & wsl sudo mount -t drvfs "${DestDriveLetter}" "${WslMountPoint}" -o "uid=${DEST_WSL_MOUNT_UID},gid=${DEST_WSL_MOUNT_GID},dmask=${DEST_WSL_MOUNT_DMASK},fmask=${DEST_WSL_MOUNT_FMASK}"
         $WslMountRes = $LASTEXITCODE
-        if ($WslMountRes -ne 0) { throw (New-Object System.IO.IOException -ArgumentList "Error mounting destination drive in WSL: `mount` returned '${WslMountRes}' ; cannot proceed further.") }
+        if ($WslMountRes -ne 0) { throw (New-Object System.IO.IOException -ArgumentList "Error mounting destination drive '${DestDriveLetter}' on '${WslMountPoint}' in WSL: `mount` returned '${WslMountRes}' ; cannot proceed further.") }
 
         $DestFullPath = "${WslMountPoint}${DestPath}"
 
