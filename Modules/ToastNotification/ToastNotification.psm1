@@ -206,6 +206,22 @@ function Show-NotificationToLoggedInUser {
     }
 }
 
+<#
+.DESCRIPTION
+Displays a toast notification.
+
+.PARAM Title
+The title text of the notification.
+
+.PARAM Message
+The main text of the notification.
+
+.PARAM AppId
+The ID of the application the notification will be bound to, as defined by `Windows.UI.Notifications.ToastNotificationManager.CreateToastNotifier(String)`.
+
+.NOTES
+For details about toast notification contents, refer to <https://docs.microsoft.com/en-us/windows/apps/design/shell/tiles-and-notifications/adaptive-interactive-toasts>.
+#>
 function Show-NotificationToast {
     param (
         [Parameter(Mandatory)]
@@ -222,6 +238,7 @@ function Show-NotificationToast {
     [Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] | Out-Null
     [Windows.Data.Xml.Dom.XmlDocument, Windows.Data.Xml.Dom.XmlDocument, ContentType = WindowsRuntime] | Out-Null
 
+    # See <https://docs.microsoft.com/en-us/uwp/schemas/tiles/toastschema/schema-root> for the toast schema specifications
     $ToastXml = @"
 <toast>
   <visual>
