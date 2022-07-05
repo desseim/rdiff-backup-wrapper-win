@@ -110,8 +110,8 @@ It's also possible to store some or all modules in a location specified in `+$en
 
 === Mount/dismount operation implementation
 
-The script ships with a mock implementation (which does nothing) of the backup destination mount/dismount operation.
-This is fine for backups toward always-mounted destinations, but if you want to automatically mount/dismount the destination respectively before/after the backup operations, you'll have to implement the `Mount-Drive` and `Dismount-Drive` functions in the link:{local_drivemount-module-script}[`{module_drivemount-name}` module] to do so according to your use case.
+The script ships with a mock implementation (which does nothing) of the backup destination drive mount/dismount operation.
+This is fine for backups toward always-mounted drives, but if you want to automatically mount/dismount the destination drive respectively before/after the backup operations, you'll have to implement the `Mount-Drive` and `Dismount-Drive` functions in the link:{local_drivemount-module-script}[`{module_drivemount-name}` module] to do so according to your use case.
 Refer to the source comments and the given mock implementation for documentation.
 
 === Scheduled execution
