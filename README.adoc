@@ -9,6 +9,7 @@
 :url_ms_ps-exec-policy: https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_execution_policies
 :url_ms_wsl: https://docs.microsoft.com/en-us/windows/wsl/
 :url_ms_scheduled-jobs: https://docs.microsoft.com/en-us/powershell/module/psscheduledjob/about/about_scheduled_jobs
+:url_sudoers-so-order: https://unix.stackexchange.com/a/67488
 
 :module_rdiffbackup-name: RdiffBackup
 :module_rdiffbackup-script-name: RdiffBackup.psm1
@@ -24,6 +25,8 @@
 :local_toastnotification-module-dir: {local_modules-dir}/{module_toastnotification-name}
 :local_drivemount-module-dir: {local_modules-dir}/{module_drivemount-name}
 :local_drivemount-module-script: {local_drivemount-module-dir}/{module_drivemount-script-name} 
+
+:var_dest-wsl-mount: DEST_WSL_MOUNT_*
 
 
 This is a simple PowerShell script which wraps calls to `rdiff-backup` with the mounting/dismounting (or connecting/disconnecting) of the backup destination.
@@ -103,11 +106,25 @@ Executables so defined can then be <<rdiff-backup-executable,selected at call ti
 
 TIP: Each parameter has a default value which can be modified by editing link:{local_wrapper-script}[`{script-file-name}`].
 
+==== WSL
+WSL executables, after the script has <<mount-dismount,mounted the destination drive>>, need to additionally mount the backup destination within WSL.
+Mount options used to mount the backup destination within WSL can be set through the `{var_dest-wsl-mount}` constants declared in link:{local_wrapper-script}[`{script-file-name}`].
+
+Additionally, `mount` within WSL is called through `sudo`, so for it to work unattended the default user of the default WSL distribution must be authorized to run `sudo mount` passwordless, for example by adding the following {url_sudoers-so-order}[*at the end*] of the `sudoers` file:
+
+.`/etc/sudoers`
+[source]
+----
+wslDefaultUserName   ALL=(ALL) NOPASSWD: /usr/bin/mount, /usr/bin/umount  # <1>
+----
+<1> Replace `wslDefaultUserName` with the name of your default WSL user
+
 === Modules
 Alternatively, modules can be stored anywhere ; you just need to change the value of the `+$MODULES_ABS_PATH+` constant in link:{local_wrapper-script}[] to the new location of the link:{local_modules-dir}[`Modules` directory]. Each module's path can also be set individually through their respective `+$MODULE_***_PATH+` variable value.
 
 It's also possible to store some or all modules in a location specified in `+$env:PSModulePath+` ; in this case, their respective `Import-Module` call in link:{local_wrapper-script}[] can be commented out and the modules will be automatically loaded (see {url_ms_script-module}[Microsoft documentation on script modules] for more on this).
 
+[#mount-dismount]
 === Mount/dismount operation implementation
 
 The script ships with a mock implementation (which does nothing) of the backup destination drive mount/dismount operation.
