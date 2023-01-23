@@ -112,7 +112,7 @@ Mount options used to mount the backup destination within WSL can be set through
 
 Additionally, `mount` within WSL is called through `sudo`, so for it to work unattended the default user of the default WSL distribution must be authorized to run `sudo mount` passwordless, for example by adding the following {url_sudoers-so-order}[*at the end*] of the `sudoers` file:
 
-.`/etc/sudoers`
+.`/etc/sudoers` (or for example `/etc/sudoers.d/wslDefaultUserName` -- if the sudoers file ends with an `@includedir /etc/sudoers.d` statement)
 [source]
 ----
 wslDefaultUserName   ALL=(ALL) NOPASSWD: /usr/bin/mount, /usr/bin/umount  # <1>
